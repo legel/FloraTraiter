@@ -3,7 +3,7 @@
 
 VENV=.venv
 PY_VER=python3.11
-PYTHON=./$(VENV)/bin/$(PY_VER)
+PYTHON=$(VENV)/bin/python
 PIP_INSTALL=$(PYTHON) -m pip install
 SPACY_MODEL=$(PYTHON) -m spacy download en_core_web_md
 
@@ -12,14 +12,14 @@ test: activate
 	$(PYTHON) -m unittest discover
 	export MOCK_TRAITER=0
 
-install: venv activate base
+install: venv base
 	$(PIP_INSTALL) git+https://github.com/rafelafrance/common_utils.git@main#egg=common_utils
 	$(PIP_INSTALL) git+https://github.com/rafelafrance/spell-well.git@main#egg=spell-well
 	$(PIP_INSTALL) git+https://github.com/rafelafrance/traiter.git@master#egg=traiter
 	$(PIP_INSTALL) .
 	$(SPACY_MODEL)
 
-dev: venv activate base
+dev: venv base
 	$(PIP_INSTALL) -e ../../misc/common_utils
 	$(PIP_INSTALL) -e ../../misc/spell-well
 	$(PIP_INSTALL) -e ../../traiter/traiter
@@ -28,14 +28,21 @@ dev: venv activate base
 	pre-commit install
 
 activate:
+	test -d $(VENV) || $(PY_VER) -m venv $(VENV)
 	. $(VENV)/bin/activate
 
 base:
+	if [ ! -f $(VENV)/bin/pip ]; then \
+	    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py; \
+	    $(PYTHON) get-pip.py; \
+	    rm get-pip.py; \
+	fi
 	$(PIP_INSTALL) -U pip setuptools wheel
 
 venv:
 	test -d $(VENV) || $(PY_VER) -m venv $(VENV)
 
 clean:
-	rm -r $(VENV)
+	rm -rf $(VENV)
 	find -iname "*.pyc" -delete
+
